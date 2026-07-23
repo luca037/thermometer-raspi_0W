@@ -1,0 +1,16 @@
+[project]
+name = "thermometer"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "adafruit-circuitpython-dht>=4.0.12",
+    "bs4>=0.0.2",
+    "gpiozero>=2.0.1",
+    "numpy>=2.5.1",
+    "requests>=2.34.2",
+    "rpi-gpio>=0.7.1",
+    "smbus>=1.1.post2",
+    "spidev>=3.8",
+]

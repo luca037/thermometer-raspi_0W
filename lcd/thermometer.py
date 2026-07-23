@@ -81,7 +81,7 @@ def main():
             if te is not None and he is not None:
                 clear_line(lcd, 2)
                 space = 8 - len(te) - len(he)
-                lcd.text(f"Te:{te}{' ' * space}He:{he}", 2)
+                lcd.text(f"To:{te}{' ' * space}Ho:{he}", 2)
 
             # wait
             time.sleep(REFRESH_RATE)
