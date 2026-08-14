@@ -72,6 +72,11 @@ def main():
     last_ti, last_hi = "--", "--"
     last_te, last_he = "--", "--"
 
+    lu_i, lu_e = "Last update: --:--", "Last update: --:--"
+
+    def get_time():
+        return time.strftime('%H:%M')
+
     # start thermometer
     try:
         while True:
@@ -86,19 +91,22 @@ def main():
 
                 # update internal
                 text_in = f"Ti: {last_ti} Hi: {last_hi}"
-                lu = f"Last update: {time.strftime('%H:%M')}"
+                if ti and hi:
+                    lu_i = f"Last update: {get_time()}"
                 draw.rectangle((0, 0, epd.height-2, 40), fill = 255, outline=0, width=2)
                 draw.text((4, 2), text_in, font = font24, fill = 0)
-                draw.text((4, 22), lu, font = font15, fill = 0)
+                draw.text((4, 22), lu_i, font = font15, fill = 0)
 
                 # update external
                 text_ext = f"Te: {last_te} He: {last_he}"
+                if te and he:
+                    lu_e = f"Last update: {get_time()}"
                 draw.rectangle((0, 48, epd.height-2, 88), fill = 255, outline=0, width=2)
                 draw.text((4, 50), text_ext, font = font24, fill = 0)
-                draw.text((4, 70), lu, font = font15, fill = 0)
+                draw.text((4, 70), lu_e, font = font15, fill = 0)
 
                 # display time
-                tm = f"{time.strftime('%H:%M')}"
+                tm = f"{get_time()}"
                 draw.rectangle((0, 95, epd.height-2, 120), fill = 0)
                 draw.text((4, 96), tm, font = font24, fill = 255)
                 epd.displayPartial(epd.getbuffer(image))
