@@ -4,21 +4,27 @@ import logging
 import time
 import datetime
 
-# Dht22 (internal data).
+# Dht22 (internal data)
 import adafruit_dht
 import board
 
-# External data.
+# data logging
+from data_logger import init_db, log_reading
+
+# external data
 import requests
 from bs4 import BeautifulSoup
 
-# E-paper.
+# e-paper
 from lib import epd2in13_V4
 from PIL import Image, ImageDraw, ImageFont
 
 # in seconds
 REFRESH_RATE = 30
+
+# abs path
 FONT_PATH = "/home/luca/Desktop/thermometer/e-paper/font/MonospaceBold.ttf"
+
 
 def internal_data(dht):
     t, h = None, None
@@ -56,6 +62,9 @@ def main():
     # init dht22
     dht = adafruit_dht.DHT22(board.D21)
 
+    # init database
+    init_db()
+
     # init epd
     epd.init()
     epd.Clear(0xFF)
@@ -88,6 +97,17 @@ def main():
                 te, he = external_data()
                 if te is not None: last_te = str(te)
                 if he is not None: last_he = str(he)
+
+                # log to database
+                try:
+                    log_reading(
+                        internal_temp=ti,
+                        internal_humidity=hi,
+                        external_temp=float(te) if te else None,
+                        external_humidity=float(he) if he else None,
+                    )
+                except Exception as e:
+                    logging.error(f"Data logging error: {e}")
 
                 # update internal
                 text_in = f"Ti: {last_ti} Hi: {last_hi}"
