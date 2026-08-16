@@ -74,9 +74,10 @@
         function toDatasets(data, keys) {
             return keys.map(({key, label, color}) => ({
                 label,
-                data: data
-                    .filter(d => d[key] !== null && d[key] !== undefined)
-                    .map(d => ({ x: new Date(d.timestamp).getTime(), y: d[key] })),
+                data: data.map(d => ({
+                    x: new Date(d.timestamp).getTime(),
+                    y: (d[key] !== null && d[key] !== undefined) ? d[key] : null
+                })),
                 borderColor: color,
                 backgroundColor: color.replace(')', ', 0.06)').replace('rgb', 'rgba'),
                 borderWidth: 1,
@@ -127,9 +128,18 @@
                         tooltip: {
                             mode: 'index',
                             intersect: false,
+                            backgroundColor: '#fff',
+                            titleColor: '#2c3e50',
+                            bodyColor: '#333',
+                            borderColor: '#ddd',
+                            borderWidth: 1,
+                            cornerRadius: 8,
                             callbacks: {
                                 title: ctx => new Date(ctx[0].raw.x).toLocaleString(),
-                                label: ctx => `${ctx.dataset.label}: ${ctx.raw.y.toFixed(1)}${unit}`
+                                label: ctx => {
+                                    if (ctx.raw.y === null) return '';
+                                    return `${ctx.dataset.label}: ${ctx.raw.y.toFixed(1)}${unit}`;
+                                }
                             }
                         }
                     },
