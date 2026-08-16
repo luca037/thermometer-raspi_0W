@@ -78,11 +78,13 @@
                     .filter(d => d[key] !== null && d[key] !== undefined)
                     .map(d => ({ x: new Date(d.timestamp).getTime(), y: d[key] })),
                 borderColor: color,
-                backgroundColor: color.replace(')', ', 0.1)').replace('rgb', 'rgba'),
-                tension: 0.3,
-                pointRadius: 3,
-                pointHoverRadius: 6,
-                fill: true,
+                backgroundColor: color.replace(')', ', 0.06)').replace('rgb', 'rgba'),
+                borderWidth: 1,
+                tension: 0.4,
+                pointRadius: 0.5,
+                pointHoverRadius: 2,
+                pointBorderWidth: 0.5,
+                fill: false,
                 parsing: false
             }));
         }
@@ -131,7 +133,7 @@
                             }
                         }
                     },
-                    elements: { point: { radius: 3, hoverRadius: 6 } }
+                    elements: { point: { radius: 2, hoverRadius: 5 } }
                 }
             };
         }
