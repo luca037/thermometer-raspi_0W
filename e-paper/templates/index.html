@@ -14,9 +14,53 @@
             font-family: 'Segoe UI', Arial, sans-serif;
             background-color: #f4f4f9;
             color: #333;
-            padding: 20px;
         }
-        h1 { text-align: center; margin-bottom: 8px; color: #2c3e50; }
+        .layout { display: flex; min-height: 100vh; }
+
+        /* Left sidebar / table of contents */
+        .sidebar {
+            width: 240px;
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 26px 18px;
+            position: fixed;
+            top: 0; bottom: 0; left: 0;
+            overflow-y: auto;
+        }
+        .sidebar h2 { font-size: 1.3em; font-weight: 600; margin-bottom: 4px; }
+        .sidebar .sub { font-size: 0.8em; color: #bdc3c7; margin-bottom: 26px; }
+        .nav { list-style: none; }
+        .nav li { margin-bottom: 4px; }
+        .nav a {
+            display: flex; align-items: center;
+            padding: 10px 12px;
+            color: #ecf0f1; text-decoration: none;
+            border-radius: 8px; font-size: 0.95em;
+            transition: background 0.15s;
+        }
+        .nav a:hover { background: #34495e; }
+        .nav .dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            margin-right: 10px; flex-shrink: 0;
+        }
+        .sidebar .current {
+            margin-top: 32px;
+            font-size: 0.8em; color: #bdc3c7;
+            border-top: 1px solid #3b4f63; padding-top: 18px;
+        }
+        .sidebar .current div { margin-bottom: 14px; }
+        .sidebar .current strong {
+            color: #ecf0f1; font-size: 1.3em; font-weight: 600;
+        }
+        .sidebar .current .label { display: block; margin-bottom: 2px; }
+
+        /* Main content */
+        .content {
+            margin-left: 240px;
+            flex: 1;
+            padding: 30px 40px 50px;
+        }
+        .content h1 { text-align: center; margin-bottom: 8px; color: #2c3e50; }
         .subtitle { text-align: center; color: #7f8c8d; margin-bottom: 30px; font-size: 0.95em; }
         .chart-container {
             background: #fff;
@@ -24,6 +68,7 @@
             padding: 20px;
             margin-bottom: 30px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            scroll-margin-top: 20px;
         }
         .chart-title {
             font-size: 1.2em; font-weight: 600; margin-bottom: 15px;
@@ -35,34 +80,81 @@
             margin-top: 10px; font-size: 0.85em;
         }
         .legend-item { display: flex; align-items: center; gap: 6px; }
-        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .legend-item .dot { width: 12px; height: 12px; border-radius: 50%; }
         .footer { text-align: center; color: #95a5a6; font-size: 0.85em; margin-top: 20px; }
+
+        /* Mobile layout */
+        @media (max-width: 768px) {
+            .layout { flex-direction: column; }
+            .sidebar {
+                position: static;
+                width: 100%;
+                height: auto;
+                overflow-y: visible;
+                padding: 16px 18px;
+            }
+            .sidebar .sub { margin-bottom: 12px; }
+            .nav { display: flex; flex-wrap: wrap; gap: 8px; }
+            .nav li { margin-bottom: 0; }
+            .sidebar .current {
+                display: flex; flex-wrap: wrap; gap: 24px;
+                margin-top: 16px;
+                border-top: none; padding-top: 0;
+            }
+            .sidebar .current div { margin-bottom: 0; }
+            .content { margin-left: 0; padding: 20px 16px 40px; }
+            .chart-container { padding: 16px; }
+            canvas { max-height: 280px; }
+        }
     </style>
 </head>
 <body>
-    <h1>Meteo Station Dashboard</h1>
-    <p class="subtitle">Last 2 days &mdash; Internal and External Data</p>
+    <div class="layout">
+        <aside class="sidebar">
+            <h2>Meteo Station</h2>
+            <div class="sub">Dashboard</div>
+            <ul class="nav">
+                <li><a href="#temp-section"><span class="dot" style="background:#fff"></span> Temperature</a></li>
+                <li><a href="#hum-section"><span class="dot" style="background:#fff"></span> Humidity</a></li>
+            </ul>
+            <div class="current">
+                <div>
+                    <span class="label">Temperature</span>
+                    <strong id="curTemp">--</strong>
+                </div>
+                <div>
+                    <span class="label">Humidity</span>
+                    <strong id="curHum">--</strong>
+                </div>
+            </div>
+        </aside>
 
-    <div class="chart-container">
-        <div class="chart-title">Temperature</div>
-        <canvas id="tempChart"></canvas>
-        <div class="legend-custom">
-            <div class="legend-item"><span class="dot" style="background:#e74c3c"></span> Internal</div>
-            <div class="legend-item"><span class="dot" style="background:#3498db"></span> External</div>
-        </div>
-    </div>
+        <main class="content">
+            <h1>Meteo Station Dashboard</h1>
+            <p class="subtitle" id="subtitle">Loading...</p>
 
-    <div class="chart-container">
-        <div class="chart-title">Humidity</div>
-        <canvas id="humChart"></canvas>
-        <div class="legend-custom">
-            <div class="legend-item"><span class="dot" style="background:#e74c3c"></span> Internal</div>
-            <div class="legend-item"><span class="dot" style="background:#3498db"></span> External</div>
-        </div>
-    </div>
+            <div class="chart-container" id="temp-section">
+                <div class="chart-title">Temperature</div>
+                <canvas id="tempChart"></canvas>
+                <div class="legend-custom">
+                    <div class="legend-item"><span class="dot" style="background:#e74c3c"></span> Internal</div>
+                    <div class="legend-item"><span class="dot" style="background:#3498db"></span> External</div>
+                </div>
+            </div>
 
-    <div class="footer">
-        <span id="lastUpdate">Loading...</span>
+            <div class="chart-container" id="hum-section">
+                <div class="chart-title">Humidity</div>
+                <canvas id="humChart"></canvas>
+                <div class="legend-custom">
+                    <div class="legend-item"><span class="dot" style="background:#e74c3c"></span> Internal</div>
+                    <div class="legend-item"><span class="dot" style="background:#3498db"></span> External</div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <span id="lastUpdate">Loading...</span>
+            </div>
+        </main>
     </div>
 
     <script>
@@ -148,6 +240,14 @@
             };
         }
 
+        function lastValid(data, key) {
+            for (let i = data.length - 1; i >= 0; i--) {
+                const v = data[i][key];
+                if (v !== null && v !== undefined) return v;
+            }
+            return null;
+        }
+
         async function init() {
             const data = await loadData();
 
@@ -160,13 +260,35 @@
                 { key: 'external_humidity', label: 'External', color: 'rgb(52,152,219)' }
             ];
 
-            const tempConfig = makeConfig('Temperature', '\u00b0C');
+            const tempConfig = makeConfig('Temperature', '°C');
             tempConfig.data.datasets = toDatasets(data, tempKeys);
             new Chart(document.getElementById('tempChart'), tempConfig);
 
             const humConfig = makeConfig('Humidity', '%');
             humConfig.data.datasets = toDatasets(data, humKeys);
             new Chart(document.getElementById('humChart'), humConfig);
+
+            // Header info: actual date range of the displayed data
+            if (data.length > 0) {
+                const times = data.map(d => new Date(d.timestamp).getTime());
+                const min = new Date(Math.min(...times));
+                const max = new Date(Math.max(...times));
+                const fmt = d => d.toLocaleDateString([], {day:'numeric', month:'short', year:'numeric'});
+                document.getElementById('subtitle').textContent =
+                    `From ${fmt(min)} to ${fmt(max)}`;
+            }
+
+            // Current readings in the sidebar
+            const curTi = lastValid(data, 'internal_temp');
+            const curTe = lastValid(data, 'external_temp');
+            const curHi = lastValid(data, 'internal_humidity');
+            const curHe = lastValid(data, 'external_humidity');
+            document.getElementById('curTemp').textContent =
+                (curTi !== null ? curTi.toFixed(1) : '--') + ' °C' +
+                (curTe !== null ? `  (ext. ${curTe.toFixed(1)})` : '');
+            document.getElementById('curHum').textContent =
+                (curHi !== null ? curHi.toFixed(1) : '--') + ' %' +
+                (curHe !== null ? `  (ext. ${curHe.toFixed(1)})` : '');
 
             document.getElementById('lastUpdate').textContent =
                 'Last data point: ' + (data.length > 0
