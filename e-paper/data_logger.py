@@ -53,6 +53,36 @@ def get_readings(days=2):
     return [dict(r) for r in rows]
 
 
+def get_daily_aggregates(days=365):
+    """Return daily aggregates for the last `days` days.
+
+    Each row contains: day (YYYY-MM-DD), internal/external avg/min/max,
+    humidity avgs and sample count. Groups by date portion of ISO timestamp.
+    """
+    since = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat(timespec="seconds")
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    rows = conn.execute(
+        """SELECT substr(timestamp, 1, 10) AS day,
+                  AVG(internal_temp)  AS internal_avg,
+                  MIN(internal_temp)  AS internal_min,
+                  MAX(internal_temp)  AS internal_max,
+                  AVG(internal_humidity) AS internal_hum_avg,
+                  AVG(external_temp)  AS external_avg,
+                  MIN(external_temp)  AS external_min,
+                  MAX(external_temp)  AS external_max,
+                  AVG(external_humidity) AS external_hum_avg,
+                  COUNT(*) AS count
+           FROM readings
+           WHERE timestamp >= ?
+           GROUP BY day
+           ORDER BY day ASC""",
+        (since,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
 if __name__ == "__main__":
     init_db()
     print(f"Database initialized at {DB_PATH}")

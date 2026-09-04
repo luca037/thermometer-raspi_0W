@@ -48,11 +48,27 @@
             font-size: 0.8em; color: #bdc3c7;
             border-top: 1px solid #3b4f63; padding-top: 18px;
         }
-        .sidebar .current div { margin-bottom: 14px; }
-        .sidebar .current strong {
-            color: #ecf0f1; font-size: 1.3em; font-weight: 600;
+        .sidebar .current .reading-group { margin-bottom: 16px; }
+        .sidebar .current .reading-head {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.95em; color: #ecf0f1; font-weight: 600; margin-bottom: 6px;
         }
-        .sidebar .current .label { display: block; margin-bottom: 2px; }
+        .sidebar .current .reading-head .dot {
+            width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+        }
+        .sidebar .current .reading-row {
+            display: flex; justify-content: space-between; align-items: baseline;
+            margin-bottom: 2px; padding-right: 4px;
+        }
+        .sidebar .current .reading-row .label { color: #bdc3c7; }
+        .sidebar .current .reading-row strong {
+            color: #ecf0f1; font-size: 1.15em; font-weight: 600;
+        }
+        .sidebar .current .observed {
+            margin-top: 8px; padding-top: 12px;
+            border-top: 1px solid #3b4f63;
+            font-size: 0.85em; color: #95a5a6;
+        }
 
         /* Main content */
         .content {
@@ -97,11 +113,12 @@
             .nav { display: flex; flex-wrap: wrap; gap: 8px; }
             .nav li { margin-bottom: 0; }
             .sidebar .current {
-                display: flex; flex-wrap: wrap; gap: 24px;
+                display: flex; flex-wrap: wrap; gap: 16px 32px;
                 margin-top: 16px;
                 border-top: none; padding-top: 0;
             }
-            .sidebar .current div { margin-bottom: 0; }
+            .sidebar .current .reading-group { margin-bottom: 0; }
+            .sidebar .current .observed { flex-basis: 100%; }
             .content { margin-left: 0; padding: 20px 16px 40px; }
             .chart-container { padding: 16px; }
             canvas { max-height: 280px; }
@@ -116,16 +133,20 @@
             <ul class="nav">
                 <li><a href="#temp-section"><span class="dot" style="background:#fff"></span> Temperature</a></li>
                 <li><a href="#hum-section"><span class="dot" style="background:#fff"></span> Humidity</a></li>
+                <li><a href="#yearly-section"><span class="dot" style="background:#fff"></span> Yearly Temperature</a></li>
             </ul>
             <div class="current">
-                <div>
-                    <span class="label">Temperature</span>
-                    <strong id="curTemp">--</strong>
+                <div class="reading-group">
+                    <div class="reading-head"><span class="dot" style="background:#e74c3c"></span> Internal</div>
+                    <div class="reading-row"><span class="label">Temp</span><strong id="curTi">--</strong></div>
+                    <div class="reading-row"><span class="label">Humidity</span><strong id="curHi">--</strong></div>
                 </div>
-                <div>
-                    <span class="label">Humidity</span>
-                    <strong id="curHum">--</strong>
+                <div class="reading-group">
+                    <div class="reading-head"><span class="dot" style="background:#3498db"></span> External</div>
+                    <div class="reading-row"><span class="label">Temp</span><strong id="curTe">--</strong></div>
+                    <div class="reading-row"><span class="label">Humidity</span><strong id="curHe">--</strong></div>
                 </div>
+                <div class="observed" id="curObserved">Observed: --</div>
             </div>
         </aside>
 
@@ -149,6 +170,18 @@
                     <div class="legend-item"><span class="dot" style="background:#e74c3c"></span> Internal</div>
                     <div class="legend-item"><span class="dot" style="background:#3498db"></span> External</div>
                 </div>
+            </div>
+
+            <div class="chart-container" id="yearly-section">
+                <div class="chart-title">Temperature — Last Year (daily average &amp; min/max)</div>
+                <canvas id="yearlyChart"></canvas>
+                <div class="legend-custom">
+                    <div class="legend-item"><span class="dot" style="background:#e74c3c"></span> Internal avg</div>
+                    <div class="legend-item"><span class="dot" style="background:rgba(231,76,60,0.25); border:1px solid #e74c3c"></span> Internal min/max</div>
+                    <div class="legend-item"><span class="dot" style="background:#3498db"></span> External avg</div>
+                    <div class="legend-item"><span class="dot" style="background:rgba(52,152,219,0.25); border:1px solid #3498db"></span> External min/max</div>
+                </div>
+                <div style="text-align:center; color:#95a5a6; font-size:0.80em; margin-top:10px;" id="yearlyInfo">Loading yearly data…</div>
             </div>
 
             <div class="footer">
@@ -240,10 +273,154 @@
             };
         }
 
+        // --- Yearly chart helpers ---
+        function formatYearlyTick(value) {
+            const d = new Date(value);
+            return d.toLocaleDateString([], { month: 'short', year: '2-digit' });
+        }
+
+        function makeYearlyConfig() {
+            return {
+                type: 'line',
+                data: { datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    parsing: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            ticks: {
+                                maxTicksLimit: 12,
+                                callback: formatYearlyTick
+                            },
+                            grid: { display: false }
+                        },
+                        y: {
+                            title: { display: true, text: 'Temperature (°C)' },
+                            grid: { color: '#ecf0f1' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#fff',
+                            titleColor: '#2c3e50',
+                            bodyColor: '#333',
+                            borderColor: '#ddd',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            callbacks: {
+                                title: ctx => new Date(ctx[0].raw.x).toLocaleDateString([], { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' }),
+                                label: ctx => {
+                                    if (ctx.raw.y === null || ctx.raw.y === undefined) return '';
+                                    return `${ctx.dataset.label}: ${ctx.raw.y.toFixed(1)}°C`;
+                                },
+                                // hide the transparent min/max band entries from tooltip filtering
+                                filter: item => !item.dataset.label.includes('_band')
+                            }
+                        }
+                    },
+                    elements: { point: { radius: 0, hoverRadius: 4 } }
+                }
+            };
+        }
+
+        function toYearlyDatasets(daily) {
+            // daily: [{day, internal_avg/min/max, external_avg/min/max}, ...]
+            const toPoint = (key) => daily.map(d => ({
+                x: new Date(d.day + 'T12:00:00').getTime(),
+                y: (d[key] !== null && d[key] !== undefined) ? d[key] : null
+            }));
+            // Band datasets: min (invisible) + max (fill to previous) create shaded min/max area
+            const mkBand = (minKey, maxKey, color) => [
+                {
+                    label: minKey + '_band_min',
+                    data: toPoint(minKey),
+                    borderColor: 'rgba(0,0,0,0)',
+                    backgroundColor: 'rgba(0,0,0,0)',
+                    borderWidth: 0,
+                    pointRadius: 0,
+                    pointHoverRadius: 0,
+                    fill: false,
+                    tension: 0.3,
+                    parsing: false
+                },
+                {
+                    label: maxKey + '_band_max',
+                    data: toPoint(maxKey),
+                    borderColor: 'rgba(0,0,0,0)',
+                    backgroundColor: color,
+                    borderWidth: 0,
+                    pointRadius: 0,
+                    pointHoverRadius: 0,
+                    fill: '-1',
+                    tension: 0.3,
+                    parsing: false
+                }
+            ];
+            const datasets = [];
+            // Internal band (light red) then avg line
+            datasets.push(...mkBand('internal_min', 'internal_max', 'rgba(231,76,60,0.15)'));
+            datasets.push({
+                label: 'Internal avg',
+                data: toPoint('internal_avg'),
+                borderColor: 'rgb(231,76,60)',
+                backgroundColor: 'rgba(231,76,60,0.06)',
+                borderWidth: 1.8,
+                tension: 0.35,
+                pointRadius: 0,
+                pointHoverRadius: 3,
+                fill: false,
+                parsing: false
+            });
+            // External band (light blue) then avg line
+            datasets.push(...mkBand('external_min', 'external_max', 'rgba(52,152,219,0.15)'));
+            datasets.push({
+                label: 'External avg',
+                data: toPoint('external_avg'),
+                borderColor: 'rgb(52,152,219)',
+                backgroundColor: 'rgba(52,152,219,0.06)',
+                borderWidth: 1.8,
+                tension: 0.35,
+                pointRadius: 0,
+                pointHoverRadius: 3,
+                fill: false,
+                parsing: false
+            });
+            return datasets;
+        }
+
+        async function initYearlyChart() {
+            const info = document.getElementById('yearlyInfo');
+            try {
+                const resp = await fetch('/api/yearly?days=365');
+                const daily = await resp.json();
+                if (!daily || daily.length === 0) {
+                    info.textContent = 'No yearly data yet — need at least one day of readings.';
+                    return;
+                }
+                const cfg = makeYearlyConfig();
+                cfg.data.datasets = toYearlyDatasets(daily);
+                new Chart(document.getElementById('yearlyChart'), cfg);
+                const fmt = d => new Date(d + 'T12:00:00').toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+                const first = daily[0].day;
+                const last = daily[daily.length - 1].day;
+                const daysWithData = daily.length;
+                info.textContent = `${daysWithData} day${daysWithData!==1?'s':''} · ${fmt(first)} → ${fmt(last)} · daily avg with min/max band`;
+            } catch (e) {
+                console.error('Yearly chart failed', e);
+                info.textContent = 'Failed to load yearly data.';
+            }
+        }
+
         function lastValid(data, key) {
             for (let i = data.length - 1; i >= 0; i--) {
                 const v = data[i][key];
-                if (v !== null && v !== undefined) return v;
+                if (v !== null && v !== undefined) return { value: v, ts: data[i].timestamp };
             }
             return null;
         }
@@ -283,17 +460,31 @@
             const curTe = lastValid(data, 'external_temp');
             const curHi = lastValid(data, 'internal_humidity');
             const curHe = lastValid(data, 'external_humidity');
-            document.getElementById('curTemp').textContent =
-                (curTi !== null ? curTi.toFixed(1) : '--') + ' °C' +
-                (curTe !== null ? `  (ext. ${curTe.toFixed(1)})` : '');
-            document.getElementById('curHum').textContent =
-                (curHi !== null ? curHi.toFixed(1) : '--') + ' %' +
-                (curHe !== null ? `  (ext. ${curHe.toFixed(1)})` : '');
+            document.getElementById('curTi').textContent = curTi !== null ? curTi.value.toFixed(1) + ' °C' : '--';
+            document.getElementById('curHi').textContent = curHi !== null ? curHi.value.toFixed(1) + ' %' : '--';
+            document.getElementById('curTe').textContent = curTe !== null ? curTe.value.toFixed(1) + ' °C' : '--';
+            document.getElementById('curHe').textContent = curHe !== null ? curHe.value.toFixed(1) + ' %' : '--';
+
+            // Observation time: latest timestamp among all valid readings
+            let obsTs = null;
+            for (let i = data.length - 1; i >= 0; i--) {
+                const d = data[i];
+                if (d.internal_temp !== null || d.external_temp !== null ||
+                    d.internal_humidity !== null || d.external_humidity !== null) {
+                    obsTs = d.timestamp;
+                    break;
+                }
+            }
+            document.getElementById('curObserved').textContent =
+                'Observed: ' + (obsTs ? new Date(obsTs).toLocaleString() : '--');
 
             document.getElementById('lastUpdate').textContent =
                 'Last data point: ' + (data.length > 0
                     ? new Date(data[data.length - 1].timestamp).toLocaleString()
                     : 'No data yet');
+
+            // Kick off yearly chart (independent fetch, does not block the above)
+            initYearlyChart();
         }
 
         init();
